@@ -1,27 +1,14 @@
 const graphql = require('graphql')
 const _ = require('lodash')
+const Book = require('../models/book')
+const Author = require('../models/author')
 
 const { GraphQLObjectType,
     GraphQLString,
     GraphQLSchema,
     GraphQLID,
     GraphQLInt,
-    GraphQLList } = graphql    // destructuring required properties
-
-// dummy data
-let books = [
-    { name: 'Harry Potter 1', genre: 'Magic', id: '1', authorId: '1' },
-    { name: 'Harry Potter 2', genre: 'Magic', id: '2', authorId: '2' },
-    { name: 'Harry Potter 3', genre: 'Magic', id: '3', authorId: '3' },
-    { name: 'Harry Potter 4', genre: 'Magic', id: '4', authorId: '1' },
-    { name: 'Harry Potter 5', genre: 'Magic', id: '5', authorId: '2' },
-    { name: 'Harry Potter 6', genre: 'Magic', id: '6', authorId: '3' }
-]
-let authors = [
-    { name: 'Tony 1', age: 69, id: '1' },
-    { name: 'Tony 2', age: 69, id: '2' },
-    { name: 'Tony 3', age: 69, id: '3' }
-]
+    GraphQLList } = graphql    // destructuring required propertiess
 
 const BookType = new GraphQLObjectType({
     name: 'Book',   // name of the type
@@ -32,7 +19,8 @@ const BookType = new GraphQLObjectType({
         author: {
             type: AuthorType,
             resolve(parent, args){
-                return _.find(authors, {id: parent.authorId})
+                // return _.find(authors, {id: parent.authorId})
+                return Author.findById(parent.authorId)
             }
         }
     })
@@ -47,7 +35,8 @@ const AuthorType = new GraphQLObjectType({
         books: {
             type: new GraphQLList(BookType),
             resolve(parent, args){
-                return _.filter(books, { authorId: parent.id })
+                // return _.filter(books, { authorId: parent.id })
+                return Book.find({ authorId: parent.id })
             }
         }
     })
@@ -63,32 +52,74 @@ const RootQuery = new GraphQLObjectType({   // end points of data graph
                 // code to get data from database/any other source
 
                 // lodash finds the required data from given data array
-                return _.find(books, { id: args.id });
+                // return _.find(books, { id: args.id });
+                return Book.findById(args.id)
             }
         }, 
         author: {
             type: AuthorType,
             args: { id: { type: GraphQLID } },
             resolve(parent, args){
-                return _.find(authors, { id: args.id })
+                // return _.find(authors, { id: args.id })
+                return Author.findById(args.id)
             }
         },
         books: {
             type: new GraphQLList(BookType),
             resolve(parent, args){
-                return books
+                // return books
+                return Book.find({})
             }
         },
         authors: {
             type: new GraphQLList(AuthorType),
             resolve(parent, args){
-                return authors
+                // return authors
+                return Author.find({})
             }
+        }
+    }
+})
+
+// allows us to add, delete, edit, etc. data
+const Mutation = new GraphQLObjectType({
+    name: 'Mutation',
+    fields: {
+        addAuthor: {    // defining each functions of mutation
+            type: AuthorType,
+            args: {     // arguments for new author type
+                name: { type: GraphQLString },
+                age: { type: GraphQLInt }
+            },
+            resolve(parent, args){
+                let author = new Author({   // creating instance of mongoose schema
+                    name: args.name,
+                    age: args.age
+                })
+                return author.save()   // mongoose function
+            }
+        },
+        addBook: {
+            type: BookType,
+            args: {
+                name: { type: GraphQLString },
+                genre: { type: GraphQLString },
+                authorId: { type: GraphQLID }
+            },
+            resolve(parent, args){
+                let book = new Book({
+                    name: args.name,
+                    genre: args.genre,
+                    authorId: args.authorId
+                })
+                return book.save()
+            } 
         }
     }
 })
 
 // export schema
 module.exports = new GraphQLSchema({
-    query: RootQuery
+    query: RootQuery,
+    mutation: Mutation
 })

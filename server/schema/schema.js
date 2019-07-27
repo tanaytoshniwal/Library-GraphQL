@@ -5,13 +5,17 @@ const { GraphQLObjectType,
     GraphQLString,
     GraphQLSchema,
     GraphQLID,
-    GraphQLInt } = graphql    // destructuring required properties
+    GraphQLInt,
+    GraphQLList } = graphql    // destructuring required properties
 
 // dummy data
 let books = [
-    { name: 'Harry Potter 1', genre: 'Magic', id: '1' },
-    { name: 'Harry Potter 2', genre: 'Magic', id: '2' },
-    { name: 'Harry Potter 3', genre: 'Magic', id: '3' }
+    { name: 'Harry Potter 1', genre: 'Magic', id: '1', authorId: '1' },
+    { name: 'Harry Potter 2', genre: 'Magic', id: '2', authorId: '2' },
+    { name: 'Harry Potter 3', genre: 'Magic', id: '3', authorId: '3' },
+    { name: 'Harry Potter 4', genre: 'Magic', id: '4', authorId: '1' },
+    { name: 'Harry Potter 5', genre: 'Magic', id: '5', authorId: '2' },
+    { name: 'Harry Potter 6', genre: 'Magic', id: '6', authorId: '3' }
 ]
 let authors = [
     { name: 'Tony 1', age: 69, id: '1' },
@@ -24,7 +28,13 @@ const BookType = new GraphQLObjectType({
     fields: () => ({    // fields of the type
         id: { type: GraphQLID },    // GraphQLString is String for GraphQL
         name: { type: GraphQLString },
-        genre: { type: GraphQLString }
+        genre: { type: GraphQLString },
+        author: {
+            type: AuthorType,
+            resolve(parent, args){
+                return _.find(authors, {id: parent.authorId})
+            }
+        }
     })
 })
 
@@ -33,7 +43,13 @@ const AuthorType = new GraphQLObjectType({
     fields: () => ({
         id: { type: GraphQLID },
         name: { type: GraphQLString },
-        age: { type: GraphQLInt }
+        age: { type: GraphQLInt },
+        books: {
+            type: new GraphQLList(BookType),
+            resolve(parent, args){
+                return _.filter(books, { authorId: parent.id })
+            }
+        }
     })
 })
 

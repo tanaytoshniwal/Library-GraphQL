@@ -11,15 +11,17 @@ const client = new ApolloClient({
 })
 
 class App extends React.Component {
-  constructor(){
-    super();
-  }
   render(){
     return (
       <ApolloProvider client={client}>
         <div id="main">
+          <h1>Books List</h1>
           <BookList />
-          <AddBook />
+          <AddBook 
+            setName = {this.setName} 
+            setGenre = {this.setGenre}
+            setAuthor = {this.setAuthor}
+            submitForm = {this.submitForm} />
         </div>
       </ApolloProvider>
     );
